@@ -12,7 +12,7 @@ const envSchema = z.object({
   TRUST_PROXY: z.coerce.number().int().min(0).optional(),
   GEMINI_API_KEY: z.string().optional(),
   // Comma-separated, tried in order if one is unavailable.
-  GEMINI_MODELS: z.string().default('gemini-flash-latest,gemini-flash-lite-latest'),
+  GEMINI_MODELS: z.string().default('gemini-2.5-flash,gemini-2.0-flash,gemini-1.5-flash,gemini-flash-latest,gemini-flash-lite-latest'),
 });
 
 export type Env = z.infer<typeof envSchema>;
