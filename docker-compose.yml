@@ -1,0 +1,29 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports: ['27017:27017']
+    volumes: [mongo_data:/data/db]
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: run the whole app in Docker too.  docker compose --profile app up --build
+  app:
+    profiles: ['app']
+    build: .
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports: ['4000:4000']
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://mongo:27017/pathway
+      CLIENT_URL: http://localhost:4000
+      TRUST_PROXY: '0' # no proxy in front when running locally
+
+volumes:
+  mongo_data:

@@ -1,0 +1,21 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# One web service runs the API and serves the built website. The database is MongoDB Atlas (see docs/DEPLOYMENT.md).
+services:
+  - type: web
+    name: pathway
+    runtime: docker
+    plan: free # free instances sleep when idle; use "starter" for an always-on service
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false # you enter this in the Render dashboard (your Atlas connection string)
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        sync: false # your public URL, e.g. https://pathway.onrender.com
+      - key: GEMINI_API_KEY
+        sync: false # optional; the AI features are disabled without it
+      - key: GEMINI_MODELS
+        value: gemini-flash-latest,gemini-flash-lite-latest
