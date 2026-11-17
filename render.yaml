@@ -15,7 +15,11 @@ services:
         generateValue: true
       - key: CLIENT_URL
         sync: false # your public URL, e.g. https://pathway.onrender.com
+      - key: GROQ_API_KEY
+        sync: false # optional; Groq API key for ultra-fast AI features
+      - key: GROQ_MODELS
+        value: llama-3.3-70b-versatile,llama-3.1-8b-instant
       - key: GEMINI_API_KEY
-        sync: false # optional; the AI features are disabled without it
+        sync: false # optional; Gemini key if using Gemini instead
       - key: GEMINI_MODELS
         value: gemini-2.5-flash,gemini-2.0-flash,gemini-1.5-flash,gemini-flash-latest,gemini-flash-lite-latest
