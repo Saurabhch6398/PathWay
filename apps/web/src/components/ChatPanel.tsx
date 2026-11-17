@@ -22,8 +22,15 @@ export function ChatPanel({ ask, intro, placeholder }: ChatPanelProps) {
   const abortRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => () => abortRef.current?.abort(), []);
-  useEffect(() => endRef.current?.scrollIntoView?.({ behavior: 'smooth' }), [messages]);
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView?.({ behavior: 'smooth' });
+  }, [messages]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
