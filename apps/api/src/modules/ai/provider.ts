@@ -2,6 +2,7 @@ import { AppError } from '../../common/errors';
 import { getEnv } from '../../config/env';
 import { createGeminiProvider } from './gemini.provider';
 import { createGroqProvider } from './groq.provider';
+import { createMockProvider } from './mock.provider';
 
 export interface ChatTurn {
   role: 'user' | 'assistant';
@@ -23,6 +24,7 @@ export interface AiProvider {
 let override: AiProvider | undefined;
 let gemini: AiProvider | undefined;
 let groq: AiProvider | undefined;
+let mock: AiProvider | undefined;
 
 /** For tests. */
 export const setAiProvider = (provider: AiProvider | undefined) => {
@@ -51,6 +53,11 @@ export function getAiProvider(): AiProvider {
         .map((m) => m.trim())
         .filter(Boolean),
     }));
+  }
+
+  // If offline mode is enabled, provide intelligent offline AI responses
+  if (env.AI_OFFLINE_MODE === 'true') {
+    return (mock ??= createMockProvider());
   }
 
   throw new AppError(

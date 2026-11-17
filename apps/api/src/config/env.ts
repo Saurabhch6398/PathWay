@@ -15,6 +15,8 @@ const envSchema = z.object({
   GEMINI_MODELS: z.string().default('gemini-2.5-flash,gemini-2.0-flash,gemini-1.5-flash,gemini-flash-latest,gemini-flash-lite-latest'),
   GROQ_API_KEY: z.string().optional(),
   GROQ_MODELS: z.string().default('llama-3.3-70b-versatile,llama-3.1-8b-instant'),
+  // When 'true', enables offline intelligent mock responses if no API key is provided
+  AI_OFFLINE_MODE: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
