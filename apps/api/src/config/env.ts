@@ -12,9 +12,9 @@ const envSchema = z.object({
   TRUST_PROXY: z.coerce.number().int().min(0).optional(),
   GEMINI_API_KEY: z.string().optional(),
   // Comma-separated, tried in order if one is unavailable.
-  GEMINI_MODELS: z.string().default('gemini-2.5-flash,gemini-2.0-flash,gemini-1.5-flash,gemini-flash-latest,gemini-flash-lite-latest'),
+  GEMINI_MODELS: z.string().default('gemini-1.5-flash,gemini-2.0-flash,gemini-2.5-flash,gemini-1.5-pro'),
   GROQ_API_KEY: z.string().optional(),
-  GROQ_MODELS: z.string().default('llama-3.3-70b-versatile,llama-3.1-8b-instant'),
+  GROQ_MODELS: z.string().default('llama-3.3-70b-versatile,openai/gpt-oss-20b,openai/gpt-oss-120b'),
   // When 'true', enables offline intelligent mock responses if no API key is provided
   AI_OFFLINE_MODE: z.string().optional(),
 });

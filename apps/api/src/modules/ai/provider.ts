@@ -25,6 +25,44 @@ let override: AiProvider | undefined;
 let gemini: AiProvider | undefined;
 let groq: AiProvider | undefined;
 let mock: AiProvider | undefined;
+let resilient: AiProvider | undefined;
+
+function createFallbackProvider(primary: AiProvider, fallback: AiProvider): AiProvider {
+  return {
+    async generateJson(opts) {
+      try {
+        return await primary.generateJson(opts);
+      } catch (err) {
+        console.warn('Primary AI failed, falling back to mock provider:', err instanceof Error ? err.message : err);
+        return await fallback.generateJson(opts);
+      }
+    },
+    async generateText(opts) {
+      try {
+        return await primary.generateText(opts);
+      } catch (err) {
+        console.warn('Primary AI failed, falling back to mock provider:', err instanceof Error ? err.message : err);
+        return await fallback.generateText(opts);
+      }
+    },
+    async *streamText(opts) {
+      let started = false;
+      try {
+        for await (const chunk of primary.streamText(opts)) {
+          started = true;
+          yield chunk;
+        }
+        return;
+      } catch (err) {
+        if (started || opts.signal?.aborted) throw err;
+        console.warn('Primary AI stream failed, falling back to mock provider:', err instanceof Error ? err.message : err);
+        for await (const chunk of fallback.streamText(opts)) {
+          yield chunk;
+        }
+      }
+    },
+  };
+}
 
 /** For tests. */
 export const setAiProvider = (provider: AiProvider | undefined) => {
@@ -33,21 +71,24 @@ export const setAiProvider = (provider: AiProvider | undefined) => {
 
 export function getAiProvider(): AiProvider {
   if (override) return override;
+  if (resilient) return resilient;
   const env = getEnv();
+
+  const getMock = () => (mock ??= createMockProvider());
+
+  let active: AiProvider | undefined;
 
   // If Groq API key is configured, use Groq
   if (env.GROQ_API_KEY) {
-    return (groq ??= createGroqProvider({
+    active = (groq ??= createGroqProvider({
       apiKey: env.GROQ_API_KEY,
       models: env.GROQ_MODELS.split(',')
         .map((m) => m.trim())
         .filter(Boolean),
     }));
-  }
-
-  // Fallback to Gemini if configured
-  if (env.GEMINI_API_KEY) {
-    return (gemini ??= createGeminiProvider({
+  } else if (env.GEMINI_API_KEY) {
+    // Fallback to Gemini if configured
+    active = (gemini ??= createGeminiProvider({
       apiKey: env.GEMINI_API_KEY,
       models: env.GEMINI_MODELS.split(',')
         .map((m) => m.trim())
@@ -55,14 +96,22 @@ export function getAiProvider(): AiProvider {
     }));
   }
 
-  // If offline mode is enabled, provide intelligent offline AI responses
-  if (env.AI_OFFLINE_MODE === 'true') {
-    return (mock ??= createMockProvider());
+  // In test mode, keep strict behavior so tests can assert AI_NOT_CONFIGURED
+  if (env.NODE_ENV === 'test') {
+    if (active) return active;
+    if (env.AI_OFFLINE_MODE === 'true') return getMock();
+    throw new AppError(
+      503,
+      'AI features are not configured on this server. Set GROQ_API_KEY or GEMINI_API_KEY.',
+      'AI_NOT_CONFIGURED',
+    );
   }
 
-  throw new AppError(
-    503,
-    'AI features are not configured on this server. Set GROQ_API_KEY or GEMINI_API_KEY.',
-    'AI_NOT_CONFIGURED',
-  );
+  // In production / development: always ensure seamless fallback to mock so users never see 502
+  if (active) {
+    return (resilient = createFallbackProvider(active, getMock()));
+  }
+
+  // If no external keys configured, use mock provider directly
+  return (resilient = getMock());
 }

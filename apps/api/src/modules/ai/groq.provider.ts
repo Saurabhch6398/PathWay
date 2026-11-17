@@ -24,6 +24,7 @@ export function createGroqProvider(opts: { apiKey: string; models: string[] }): 
       try {
         return await run(model);
       } catch (err) {
+        console.warn(`Groq model ${model} failed:`, err instanceof Error ? err.message : err);
         last = err;
       }
     }
